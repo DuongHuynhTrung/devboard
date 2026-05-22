@@ -30,3 +30,8 @@ desktop.ini
 
 # === AI Code Assistant ===
 .gemini/
+
+# === Secrets & Environments ===
+.env
+.env.*
+!.env.example
