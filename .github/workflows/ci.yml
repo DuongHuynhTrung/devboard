@@ -1,1 +1,52 @@
-# GitHub Actions CI workflow placeholder
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/devboard
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push auth-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/auth-service
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-auth:latest
+
+      - name: Build and push task-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/task-service
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-task:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-frontend:latest
