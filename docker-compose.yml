@@ -1,1 +1,59 @@
-# Docker Compose configuration placeholder
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: devboard-postgres
+    environment:
+      POSTGRES_PASSWORD: devboard123
+      POSTGRES_DB: devboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: devboard-auth-service
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - postgres
+
+  task-service:
+    build:
+      context: ./services/task-service
+      dockerfile: Dockerfile
+    container_name: devboard-task-service
+    environment:
+      - ASPNETCORE_URLS=http://+:5001
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: devboard-frontend
+    depends_on:
+      - auth-service
+      - task-service
+
+  nginx:
+    image: nginx:alpine
+    container_name: devboard-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - task-service
+      - frontend
+
+volumes:
+  postgres_data:
